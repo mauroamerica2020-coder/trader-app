@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel Estádio Pro</title>
+    <title>Painel Estádio Seguro Oficial</title>
     <style>
         body { margin: 0; display: flex; flex-direction: column; height: 100vh; font-family: sans-serif; overflow: hidden; background: #111; }
         #status-bar { height: 35px; background: #222; color: #aaa; text-align: center; line-height: 35px; font-size: 0.9rem; font-weight: bold; }
@@ -27,9 +27,9 @@
         const statusBar = document.getElementById('status-bar');
         let socket;
         
-        // ATENÇÃO: SUBSTITUA PELO SEU LINK DO RENDER NO PASSO 4 (Mantenha o wss://)
+        // 🔒 SUA CONFIGURAÇÃO DE SENHA E LINK
+        const SENHA_CORRETA = "1234";
         const SERVER_URL = 'wss://trader-app-g12q.onrender.com';
-
 
         function conectar() {
             socket = new WebSocket(SERVER_URL);
@@ -44,9 +44,7 @@
                 statusBar.innerText = "⚠️ SEM SINAL! RECONECTANDO...";
                 statusBar.style.backgroundColor = "#e67e22";
                 statusBar.style.color = "#fff";
-                
-                // Tenta reconectar automaticamente a cada 1 segundo se a conexão cair
-                setTimeout(conectar, 1000); 
+                setTimeout(conectar, 1000); // Fica tentando reconectar a cada 1 segundo em segundo plano
             };
 
             socket.onerror = () => {
@@ -54,7 +52,7 @@
             };
         }
 
-        // Heartbeat: Evita que o servidor grátis durma durante o jogo
+        // Heartbeat para manter o servidor grátis acordado durante o jogo
         setInterval(() => {
             if (socket && socket.readyState === WebSocket.OPEN) {
                 socket.send('H');
@@ -62,7 +60,14 @@
         }, 15000);
 
         function enviar(sinal) {
-            // Vibra por 80ms para confirmação tátil (você sente o clique sem olhar)
+            // O SEGREDO: A senha só é pedida na hora de APERTAR o botão!
+            const senhaDigitada = prompt("Digite a senha de segurança para enviar o sinal:");
+            
+            if (senhaDigitada !== SENHA_CORRETA) {
+                alert("Senha incorreta! Sinal cancelado.");
+                return;
+            }
+
             if (navigator.vibrate) {
                 navigator.vibrate(80);
             }
@@ -70,11 +75,12 @@
             if (socket && socket.readyState === WebSocket.OPEN) {
                 socket.send(sinal);
             } else {
-                statusBar.innerText = "❌ ERRO: SEM INTERNET AGORA!";
+                statusBar.innerText = "❌ ERRO: SERVIDOR DESCONECTADO!";
                 statusBar.style.backgroundColor = "#c0392b";
             }
         }
 
+        // Inicializa a internet IMEDIATAMENTE ao abrir a página (corrige o erro antigo)
         conectar();
     </script>
 </body>
