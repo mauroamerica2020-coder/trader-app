@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receptor Casa Pro</title>
+    <style>
+        body { margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center; font-family: sans-serif; transition: background 0.1s ease; background: #2c3e50; color: white;}
+        #status { font-size: 4rem; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div id="status">AGUARDANDO SINAL...</div>
+    <audio id="audioAlert" src="https://google.com"></audio>
+
+    <script>
+        let socket;
+        const statusDiv = document.getElementById('status');
+        const audio = document.getElementById('audioAlert');
+        
+        // ATENÇÃO: SUBSTITUA PELO SEU LINK DO RENDER NO PASSO 4 (Mantenha o wss://)
+        const SERVER_URL = 'wss://://onrender.com'; 
+
+        function conectarCasa() {
+            socket = new WebSocket(SERVER_URL);
+
+            socket.onopen = () => {
+                statusDiv.innerText = "CONECTADO! AGUARDANDO SINAL DO ESTÁDIO...";
+                document.body.style.backgroundColor = "#2c3e50";
+            };
+
+            socket.onmessage = (event) => {
+                const comando = event.data;
+                if (comando === 'G') {
+                    document.body.style.backgroundColor = '#2ecc71';
+                    statusDiv.innerText = 'GREEN / ENTRAR!';
+                    audio.play().catch(() => {}); // Toca o som (ignora erro se navegador bloquear)
+                } else if (comando === 'R') {
+                    document.body.style.backgroundColor = '#e74c3c';
+                    statusDiv.innerText = 'RED / FECHAR!';
+                    audio.play().catch(() => {});
+                }
+            };
+
+            socket.onclose = () => {
+                statusDiv.innerText = 'CONEXÃO PERDIDA COM O SERVIDOR! RECONECTANDO...';
+                document.body.style.backgroundColor = '#000';
+                setTimeout(conectarCasa, 1000); // Reconecta em casa também
+            };
+        }
+
+        conectarCasa();
+    </script>
+</body>
+</html>
