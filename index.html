@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel Estádio Pro</title>
+    <title>Painel Estádio Seguro</title>
     <style>
         body { margin: 0; display: flex; flex-direction: column; height: 100vh; font-family: sans-serif; overflow: hidden; background: #111; }
         #status-bar { height: 35px; background: #222; color: #aaa; text-align: center; line-height: 35px; font-size: 0.9rem; font-weight: bold; }
@@ -16,7 +16,7 @@
 </head>
 <body>
 
-    <div id="status-bar">CONECTANDO...</div>
+    <div id="status-bar">BLOQUEADO - INSIRA A SENHA</div>
     
     <div class="grid">
         <button class="btn-green" onclick="enviar('G')">GREEN</button>
@@ -26,27 +26,42 @@
     <script>
         const statusBar = document.getElementById('status-bar');
         let socket;
+        let autenticado = false;
         
-        // ATENÇÃO: SUBSTITUA PELO SEU LINK DO RENDER NO PASSO 4 (Mantenha o wss://)
-        const SERVER_URL = 'wss://trader-app-g12q.onrender.com';
+        // 🔒 DEFINA SUA SENHA DE 4 DÍGITOS AQUI
+        const SENHA_CORRETA = "1234"; 
 
+        const SERVER_URL = 'wss://://onrender.com'; 
+
+        function verificarSenha() {
+            const senhaDigitada = prompt("Digite a senha de 4 dígitos para liberar o painel:");
+            if (senhaDigitada === SENHA_CORRETA) {
+                autenticado = true;
+                conectar();
+            } else {
+                alert("Senha incorreta! O painel continuará bloqueado.");
+                statusBar.innerText = "❌ ACESSO NEGADO";
+                statusBar.style.backgroundColor = "#c0392b";
+                statusBar.style.color = "#fff";
+            }
+        }
 
         function conectar() {
             socket = new WebSocket(SERVER_URL);
 
             socket.onopen = () => {
-                statusBar.innerText = "🔴 ONLINE (PRONTO PARA ENVIAR)";
+                statusBar.innerText = "🔴 ONLINE (PAINEL LIBERADO)";
                 statusBar.style.backgroundColor = "#27ae60";
                 statusBar.style.color = "#fff";
             };
 
             socket.onclose = () => {
-                statusBar.innerText = "⚠️ SEM SINAL! RECONECTANDO...";
-                statusBar.style.backgroundColor = "#e67e22";
-                statusBar.style.color = "#fff";
-                
-                // Tenta reconectar automaticamente a cada 1 segundo se a conexão cair
-                setTimeout(conectar, 1000); 
+                if (autenticado) {
+                    statusBar.innerText = "⚠️ SEM SINAL! RECONECTANDO...";
+                    statusBar.style.backgroundColor = "#e67e22";
+                    statusBar.style.color = "#fff";
+                    setTimeout(conectar, 1000); 
+                }
             };
 
             socket.onerror = () => {
@@ -54,15 +69,18 @@
             };
         }
 
-        // Heartbeat: Evita que o servidor grátis durma durante o jogo
         setInterval(() => {
-            if (socket && socket.readyState === WebSocket.OPEN) {
+            if (autenticado && socket && socket.readyState === WebSocket.OPEN) {
                 socket.send('H');
             }
         }, 15000);
 
         function enviar(sinal) {
-            // Vibra por 80ms para confirmação tátil (você sente o clique sem olhar)
+            if (!autenticado) {
+                alert("Painel bloqueado! Recarregue a página e insira a senha correta.");
+                return;
+            }
+
             if (navigator.vibrate) {
                 navigator.vibrate(80);
             }
@@ -75,7 +93,8 @@
             }
         }
 
-        conectar();
+        // Executa a validação assim que o site abre
+        verificarSenha();
     </script>
 </body>
 </html>
