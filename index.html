@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel Estádio Seguro Oficial</title>
+    <title>Painel Estádio Seguro Inteligente</title>
     <style>
         body { margin: 0; display: flex; flex-direction: column; height: 100vh; font-family: sans-serif; overflow: hidden; background: #111; }
         #status-bar { height: 35px; background: #222; color: #aaa; text-align: center; line-height: 35px; font-size: 0.9rem; font-weight: bold; }
@@ -16,7 +16,7 @@
 </head>
 <body>
 
-    <div id="status-bar">CONECTANDO...</div>
+    <div id="status-bar">AGUARDANDO AUTENTICAÇÃO...</div>
     
     <div class="grid">
         <button class="btn-green" onclick="enviar('G')">GREEN</button>
@@ -26,12 +26,29 @@
     <script>
         const statusBar = document.getElementById('status-bar');
         let socket;
+        let painelLiberado = false;
         
         // 🔒 SUA CONFIGURAÇÃO DE SENHA E LINK
         const SENHA_CORRETA = "1234";
         const SERVER_URL = 'wss://trader-app-g12q.onrender.com';
 
+        function verificarSenhaInicial() {
+            const senhaDigitada = prompt("Digite a senha de segurança para liberar o painel:");
+            
+            if (senhaDigitada === SENHA_CORRETA) {
+                painelLiberado = true;
+                conectar(); // Só tenta conectar na internet se a senha estiver certa
+            } else {
+                alert("Senha incorreta! O painel continuará bloqueado.");
+                statusBar.innerText = "❌ ACESSO BLOQUEADO";
+                statusBar.style.backgroundColor = "#c0392b";
+                statusBar.style.color = "#fff";
+            }
+        }
+
         function conectar() {
+            if (!painelLiberado) return;
+
             socket = new WebSocket(SERVER_URL);
 
             socket.onopen = () => {
@@ -41,10 +58,12 @@
             };
 
             socket.onclose = () => {
-                statusBar.innerText = "⚠️ SEM SINAL! RECONECTANDO...";
-                statusBar.style.backgroundColor = "#e67e22";
-                statusBar.style.color = "#fff";
-                setTimeout(conectar, 1000); // Fica tentando reconectar a cada 1 segundo em segundo plano
+                if (painelLiberado) {
+                    statusBar.innerText = "⚠️ SEM SINAL! RECONECTANDO...";
+                    statusBar.style.backgroundColor = "#e67e22";
+                    statusBar.style.color = "#fff";
+                    setTimeout(conectar, 1000); 
+                }
             };
 
             socket.onerror = () => {
@@ -54,17 +73,14 @@
 
         // Heartbeat para manter o servidor grátis acordado durante o jogo
         setInterval(() => {
-            if (socket && socket.readyState === WebSocket.OPEN) {
+            if (painelLiberado && socket && socket.readyState === WebSocket.OPEN) {
                 socket.send('H');
             }
         }, 15000);
 
         function enviar(sinal) {
-            // O SEGREDO: A senha só é pedida na hora de APERTAR o botão!
-            const senhaDigitada = prompt("Digite a senha de segurança para enviar o sinal:");
-            
-            if (senhaDigitada !== SENHA_CORRETA) {
-                alert("Senha incorreta! Sinal cancelado.");
+            if (!painelLiberado) {
+                alert("Painel bloqueado!");
                 return;
             }
 
@@ -73,15 +89,18 @@
             }
 
             if (socket && socket.readyState === WebSocket.OPEN) {
-                socket.send(sinal);
+                socket.send(sinal); // Envia direto, SEM pedir senha novamente!
             } else {
                 statusBar.innerText = "❌ ERRO: SERVIDOR DESCONECTADO!";
                 statusBar.style.backgroundColor = "#c0392b";
             }
         }
 
-        // Inicializa a internet IMEDIATAMENTE ao abrir a página (corrige o erro antigo)
-        conectar();
+        // Roda o pedido de senha apenas 1 vez quando a página termina de carregar
+        window.onload = () => {
+            // Pequeno tempo de 300ms para dar tempo do navegador carregar o visual antes do pop-up
+            setTimeout(verificarSenhaInicial, 300);
+        };
     </script>
 </body>
 </html>
