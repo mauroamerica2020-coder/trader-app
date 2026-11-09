@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel Estádio Seguro Pro</title>
+    <title>Painel Estádio Direto</title>
     <style>
         body { margin: 0; display: flex; flex-direction: column; height: 100vh; font-family: sans-serif; overflow: hidden; background: #111; }
-        #status-bar { height: 35px; background: #c0392b; color: #fff; text-align: center; line-height: 35px; font-size: 0.9rem; font-weight: bold; }
+        #status-bar { height: 35px; background: #222; color: #aaa; text-align: center; line-height: 35px; font-size: 0.9rem; font-weight: bold; }
         .grid { flex: 1; display: flex; }
         button { flex: 1; border: none; color: white; font-size: 3.5rem; font-weight: bold; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .btn-green { background-color: #2ecc71; }
@@ -16,7 +16,7 @@
 </head>
 <body>
 
-    <div id="status-bar">AGUARDANDO VALIDAÇÃO DE ACESSO...</div>
+    <div id="status-bar">CONECTANDO...</div>
     
     <div class="grid">
         <button class="btn-green" onclick="enviar('G')">GREEN</button>
@@ -25,73 +25,56 @@
 
     <script>
         const statusBar = document.getElementById('status-bar');
-        let socket = null;
-        let autenticado = false;
+        let socket;
         
-        // SUA CONFIGURAÇÃO DE SENHA E LINK
-        const SENHA_CORRETA = "1234"; 
-        const SERVER_URL = 'wss://://onrender.com'; 
+        // Seu link direto e correto do Render
+        const SERVER_URL = 'wss://onrender.com'; 
 
         function conectar() {
-            if (!autenticado) return;
-            
-            statusBar.innerText = "⏳ CONECTANDO AO SERVIDOR...";
-            statusBar.style.backgroundColor = "#e67e22";
-
             socket = new WebSocket(SERVER_URL);
 
             socket.onopen = () => {
-                statusBar.innerText = "🟢 ONLINE (PRONTO PARA ENVIAR)";
+                statusBar.innerText = "🔴 ONLINE (PRONTO PARA ENVIAR)";
                 statusBar.style.backgroundColor = "#27ae60";
+                statusBar.style.color = "#fff";
             };
 
             socket.onclose = () => {
-                if (autenticado) {
-                    statusBar.innerText = "⚠️ SEM SINAL! RECONECTANDO EM 2S...";
-                    statusBar.style.backgroundColor = "#d35400";
-                    setTimeout(conectar, 2000); 
-                }
+                statusBar.innerText = "⚠️ SEM SINAL! RECONECTANDO...";
+                statusBar.style.backgroundColor = "#e67e22";
+                statusBar.style.color = "#fff";
+                
+                // Tenta reconectar imediatamente a cada 1 segundo se cair
+                setTimeout(conectar, 1000); 
             };
 
-            socket.onerror = (err) => {
-                console.error("Erro no WebSocket:", err);
+            socket.onerror = () => {
+                socket.close();
             };
         }
 
         // Heartbeat para manter o servidor acordado
         setInterval(() => {
-            if (autenticado && socket && socket.readyState === WebSocket.OPEN) {
+            if (socket && socket.readyState === WebSocket.OPEN) {
                 socket.send('H');
             }
         }, 15000);
 
         function enviar(sinal) {
-            if (!autenticado) {
-                alert("Painel bloqueado! Insira a senha correta.");
-                return;
+            if (navigator.vibrate) {
+                navigator.vibrate(80);
             }
 
             if (socket && socket.readyState === WebSocket.OPEN) {
                 socket.send(sinal);
-                if (navigator.vibrate) navigator.vibrate(60);
             } else {
                 statusBar.innerText = "❌ ERRO: SEM INTERNET AGORA!";
                 statusBar.style.backgroundColor = "#c0392b";
             }
         }
 
-        // Controla o fluxo inicial de forma segura
-        window.addEventListener('load', () => {
-            const senhaDigitada = prompt("Digite a senha de 4 dígitos para liberar o painel:");
-            if (senhaDigitada === SENHA_CORRETA) {
-                autenticado = true;
-                conectar();
-            } else {
-                alert("Senha incorreta!");
-                statusBar.innerText = "❌ ACESSO BLOQUEADO - SENHA INCORRETA";
-                statusBar.style.backgroundColor = "#7f8c8d";
-            }
-        });
+        // Inicializa direto sem pedir nada
+        conectar();
     </script>
 </body>
 </html>
