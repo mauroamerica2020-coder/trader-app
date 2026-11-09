@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel Estádio Direto</title>
+    <title>Painel Estádio Pro</title>
     <style>
         body { margin: 0; display: flex; flex-direction: column; height: 100vh; font-family: sans-serif; overflow: hidden; background: #111; }
         #status-bar { height: 35px; background: #222; color: #aaa; text-align: center; line-height: 35px; font-size: 0.9rem; font-weight: bold; }
@@ -27,8 +27,8 @@
         const statusBar = document.getElementById('status-bar');
         let socket;
         
-        // Seu link direto e correto do Render
-        const SERVER_URL = 'wss://onrender.com'; 
+        // ATENÇÃO: SUBSTITUA PELO SEU LINK DO RENDER NO PASSO 4 (Mantenha o wss://)
+        const SERVER_URL = 'wss://://onrender.com'; 
 
         function conectar() {
             socket = new WebSocket(SERVER_URL);
@@ -44,7 +44,7 @@
                 statusBar.style.backgroundColor = "#e67e22";
                 statusBar.style.color = "#fff";
                 
-                // Tenta reconectar imediatamente a cada 1 segundo se cair
+                // Tenta reconectar automaticamente a cada 1 segundo se a conexão cair
                 setTimeout(conectar, 1000); 
             };
 
@@ -53,7 +53,7 @@
             };
         }
 
-        // Heartbeat para manter o servidor acordado
+        // Heartbeat: Evita que o servidor grátis durma durante o jogo
         setInterval(() => {
             if (socket && socket.readyState === WebSocket.OPEN) {
                 socket.send('H');
@@ -61,6 +61,7 @@
         }, 15000);
 
         function enviar(sinal) {
+            // Vibra por 80ms para confirmação tátil (você sente o clique sem olhar)
             if (navigator.vibrate) {
                 navigator.vibrate(80);
             }
@@ -73,9 +74,9 @@
             }
         }
 
-        // Inicializa direto sem pedir nada
         conectar();
     </script>
 </body>
 </html>
+
 
