@@ -11,20 +11,22 @@
 </head>
 <body>
 
-    <div id="status">CONECTANDO AO SERVIDOR...</div>
+    <div id="status">AGUARDANDO SINAL...</div>
+    <audio id="audioAlert" src="https://google.com"></audio>
 
     <script>
         let socket;
         const statusDiv = document.getElementById('status');
+        const audio = document.getElementById('audioAlert');
         
-        // LINK EXATO E COMPATÍVEL COM O SEU CELULAR
+        // ATENÇÃO: SUBSTITUA PELO SEU LINK DO RENDER NO PASSO 4 (Mantenha o wss://)
         const SERVER_URL = 'wss://://onrender.com'; 
 
         function conectarCasa() {
             socket = new WebSocket(SERVER_URL);
 
             socket.onopen = () => {
-                statusDiv.innerText = "ONLINE! AGUARDANDO SINAL DO ESTÁDIO...";
+                statusDiv.innerText = "CONECTADO! AGUARDANDO SINAL DO ESTÁDIO...";
                 document.body.style.backgroundColor = "#2c3e50";
             };
 
@@ -33,23 +35,18 @@
                 if (comando === 'G') {
                     document.body.style.backgroundColor = '#2ecc71';
                     statusDiv.innerText = 'GREEN / ENTRAR!';
-                    
-                    // Som nativo do chip do PC (sem arquivos de áudio)
-                    window.speechSynthesis.cancel();
-                    window.speechSynthesis.speak(new SpeechSynthesisUtterance("")); 
+                    audio.play().catch(() => {}); // Toca o som (ignora erro se navegador bloquear)
                 } else if (comando === 'R') {
                     document.body.style.backgroundColor = '#e74c3c';
                     statusDiv.innerText = 'RED / FECHAR!';
-                    
-                    window.speechSynthesis.cancel();
-                    window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+                    audio.play().catch(() => {});
                 }
             };
 
             socket.onclose = () => {
-                statusDiv.innerText = 'SEM SINAL! RECONECTANDO...';
+                statusDiv.innerText = 'CONEXÃO PERDIDA COM O SERVIDOR! RECONECTANDO...';
                 document.body.style.backgroundColor = '#000';
-                setTimeout(conectarCasa, 1000); 
+                setTimeout(conectarCasa, 1000); // Reconecta em casa também
             };
         }
 
@@ -57,5 +54,6 @@
     </script>
 </body>
 </html>
+
 
 
