@@ -26,12 +26,19 @@
         const SERVER_URL = 'wss://trader-app-g12q.onrender.com';
 
 
-        function conectarCasa() {
+                function conectarCasa() {
             socket = new WebSocket(SERVER_URL);
 
             socket.onopen = () => {
+                statusDiv.innerText = "CLIQUE AQUI NA TELA PARA ATIVAR O SOM!";
+                document.body.style.backgroundColor = "#e67e22"; // Fica laranja avisando que precisa clicar
+            };
+
+            // ESSE É O SEGREDO: Força o navegador a carregar e liberar o som no clique do seu amigo
+            document.body.onclick = () => {
+                audio.load();
                 statusDiv.innerText = "CONECTADO! AGUARDANDO SINAL DO ESTÁDIO...";
-                document.body.style.backgroundColor = "#2c3e50";
+                document.body.style.backgroundColor = "#2c3e50"; // Volta para o azul escuro normal
             };
 
             socket.onmessage = (event) => {
@@ -39,18 +46,21 @@
                 if (comando === 'G') {
                     document.body.style.backgroundColor = '#2ecc71';
                     statusDiv.innerText = 'GREEN / ENTRAR!';
-                    audio.play().catch(() => {}); // Toca o som (ignora erro se navegador bloquear)
+                    audio.play().catch((e) => console.log("Erro de permissão de áudio:", e));
                 } else if (comando === 'R') {
                     document.body.style.backgroundColor = '#e74c3c';
                     statusDiv.innerText = 'RED / FECHAR!';
-                    audio.play().catch(() => {});
+                    audio.play().catch((e) => console.log("Erro de permissão de áudio:", e));
                 }
             };
 
             socket.onclose = () => {
                 statusDiv.innerText = 'CONEXÃO PERDIDA COM O SERVIDOR! RECONECTANDO...';
                 document.body.style.backgroundColor = '#000';
-                setTimeout(conectarCasa, 1000); // Reconecta em casa também
+                setTimeout(conectarCasa, 1000); 
+            };
+        }
+
             };
         }
 
