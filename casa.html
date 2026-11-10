@@ -3,60 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Receptor Casa Profissional</title>
+    <title>Receptor Casa Som Nativo</title>
     <style>
-        body { margin: 0; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; transition: background 0.1s ease; background: #2c3e50; color: white; }
-        #status { font-size: 3.5rem; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); text-align: center; margin-bottom: 30px; padding: 0 20px; }
-        #btn-audio { padding: 20px 40px; font-size: 1.8rem; font-weight: bold; background-color: #e67e22; color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: transform 0.1s, background-color 0.2s; }
-        #btn-audio:active { transform: scale(0.95); }
-        .oculto { display: none !important; }
+        body { margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center; font-family: sans-serif; transition: background 0.1s ease; background: #2c3e50; color: white;}
+        #status { font-size: 4rem; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); text-align: center; }
     </style>
 </head>
 <body>
 
-    <div id="status">CLIQUE NO BOTÃO ABAIXO PARA ATIVAR O PROJETO</div>
-    <button id="btn-audio" onclick="ativarSistema()">ATIVAR SISTEMA E ÁUDIO</button>
+    <div id="status">CLIQUE EM QUALQUER LUGAR DA TELA PARA ATIVAR O ALARME</div>
 
     <script>
         let socket;
         const statusDiv = document.getElementById('status');
-        const btnAudio = document.getElementById('btn-audio');
-        let sistemaAtivado = false;
+        let audioCtx = null;
         
-        const SERVER_URL = 'wss://trader-app-g12q.onrender.com'; 
+        const SERVER_URL = 'wss://://onrender.com'; 
 
-        function alertarSonoro(texto) {
-            if (!sistemaAtivado) return;
-            try {
-                window.speechSynthesis.cancel(); 
-                const fala = new SpeechSynthesisUtterance(texto);
-                fala.lang = 'pt-BR';
-                fala.rate = 1.4; 
-                fala.pitch = 1.2; 
-                window.speechSynthesis.speak(fala);
-            } catch (e) {
-                console.error("Erro ao reproduzir som nativo:", e);
+        // Ativa o sistema de som nativo do computador no primeiro clique do seu amigo na tela
+        document.body.onclick = () => {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
-        }
+            statusDiv.innerText = "CONECTADO! AGUARDANDO SINAL DO ESTÁDIO...";
+            document.body.style.backgroundColor = "#2c3e50";
+        };
 
-        function activarSistema() {
-            sistemaAtivado = true;
-            btnAudio.classList.add('oculto');
+        // Cria um som eletrônico agudo matematicamente sem depender de arquivos ou links externos
+        function dispararAlarme() {
+            if (!audioCtx) return;
             try {
-                window.speechSynthesis.cancel();
-                const arranque = new SpeechSynthesisUtterance("");
-                window.speechSynthesis.speak(arranque);
-            } catch(e){}
-            statusDiv.innerText = "CONECTANDO AO SERVIDOR...";
-            conectarCasa();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime); // Som agudo claro
+                gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime); // Volume
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.25); // Duração curta de 0.25 segundos
+            } catch (e) {
+                console.log("Erro som:", e);
+            }
         }
 
         function conectarCasa() {
             socket = new WebSocket(SERVER_URL);
 
             socket.onopen = () => {
-                statusDiv.innerText = "ONLINE! AGUARDANDO SINAL DO ESTÁDIO...";
-                document.body.style.backgroundColor = "#2c3e50";
+                if (!audioCtx) {
+                    statusDiv.innerText = "CLIQUE EM QUALQUER LUGAR DA TELA PARA ATIVAR O ALARME";
+                }
             };
 
             socket.onmessage = (event) => {
@@ -64,11 +64,11 @@
                 if (comando === 'G') {
                     document.body.style.backgroundColor = '#2ecc71';
                     statusDiv.innerText = 'GREEN / ENTRAR!';
-                    alertarSonoro("Green"); 
+                    dispararAlarme(); 
                 } else if (comando === 'R') {
                     document.body.style.backgroundColor = '#e74c3c';
                     statusDiv.innerText = 'RED / FECHAR!';
-                    alertarSonoro("Red"); 
+                    dispararAlarme(); 
                 }
             };
 
@@ -78,6 +78,8 @@
                 setTimeout(conectarCasa, 1000); 
             };
         }
+
+        conectarCasa();
     </script>
 </body>
 </html>
