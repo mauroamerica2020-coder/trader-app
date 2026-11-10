@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Receptor Casa Pro</title>
+    <title>Receptor Casa Oficial</title>
     <style>
         body { margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center; font-family: sans-serif; transition: background 0.1s ease; background: #2c3e50; color: white;}
         #status { font-size: 4rem; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); text-align: center; }
@@ -11,35 +11,53 @@
 </head>
 <body>
 
-    <div id="status">AGUARDANDO SINAL...</div>
-    <audio id="audioAlert" src="https://githubusercontent.com"></audio>
-
-
-
-
+    <div id="status">CLIQUE NA TELA PARA ATIVAR O ALARME!</div>
 
     <script>
         let socket;
         const statusDiv = document.getElementById('status');
-        const audio = document.getElementById('audioAlert');
+        let audioCtx = null;
         
-        // ATENÇÃO: SUBSTITUA PELO SEU LINK DO RENDER NO PASSO 4 (Mantenha o wss://)
-        const SERVER_URL = 'wss://trader-app-g12q.onrender.com';
+        const SERVER_URL = 'wss://trader-app-g12q.onrender.com'; 
 
+        // Ativa o sistema de som nativo do processador no primeiro clique do seu amigo
+        document.body.onclick = () => {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            statusDiv.innerText = "CONECTADO! AGUARDANDO SINAL DO ESTÁDIO...";
+            document.body.style.backgroundColor = "#2c3e50";
+        };
 
-                function conectarCasa() {
+        // Cria um bipe eletrônico agudo matematicamente sem depender de arquivos ou links
+        function dispararBipe() {
+            if (!audioCtx) return;
+            try {
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime); // Som agudo claro
+                gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime); // Volume bom
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.20); // Duração curta perfeita
+            } catch (e) {
+                console.log("Erro som:", e);
+            }
+        }
+
+        function conectarCasa() {
             socket = new WebSocket(SERVER_URL);
 
             socket.onopen = () => {
-                statusDiv.innerText = "CLIQUE AQUI NA TELA PARA ATIVAR O SOM!";
-                document.body.style.backgroundColor = "#e67e22"; // Fica laranja avisando que precisa clicar
-            };
-
-            // ESSE É O SEGREDO: Força o navegador a carregar e liberar o som no clique do seu amigo
-            document.body.onclick = () => {
-                audio.load();
-                statusDiv.innerText = "CONECTADO! AGUARDANDO SINAL DO ESTÁDIO...";
-                document.body.style.backgroundColor = "#2c3e50"; // Volta para o azul escuro normal
+                // Se ele ainda não clicou, avisa para clicar
+                if (!audioCtx) {
+                    statusDiv.innerText = "CLIQUE NA TELA PARA ATIVAR O ALARME!";
+                }
             };
 
             socket.onmessage = (event) => {
@@ -47,21 +65,18 @@
                 if (comando === 'G') {
                     document.body.style.backgroundColor = '#2ecc71';
                     statusDiv.innerText = 'GREEN / ENTRAR!';
-                    audio.play().catch((e) => console.log("Erro de permissão de áudio:", e));
+                    dispararBipe(); 
                 } else if (comando === 'R') {
                     document.body.style.backgroundColor = '#e74c3c';
                     statusDiv.innerText = 'RED / FECHAR!';
-                    audio.play().catch((e) => console.log("Erro de permissão de áudio:", e));
+                    dispararBipe(); 
                 }
             };
 
             socket.onclose = () => {
-                statusDiv.innerText = 'CONEXÃO PERDIDA COM O SERVIDOR! RECONECTANDO...';
+                statusDiv.innerText = 'CONEXÃO PERDIDA! RECONECTANDO...';
                 document.body.style.backgroundColor = '#000';
                 setTimeout(conectarCasa, 1000); 
-            };
-        }
-
             };
         }
 
@@ -69,3 +84,4 @@
     </script>
 </body>
 </html>
+
